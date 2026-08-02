@@ -1,0 +1,29 @@
+# Arduino build output
+build/
+out/
+*.bin
+*.elf
+*.hex
+*.map
+*.uf2
+
+# Arduino IDE and ESP32 cache files
+.arduinoIDE/
+*.partitions.bin
+*.bootloader.bin
+
+# Local editor files
+.vscode/
+.idea/
+*.swp
+*~
+
+# Operating system files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Local exports and temporary archives
+*.tmp
+*.bak
+*.zip
