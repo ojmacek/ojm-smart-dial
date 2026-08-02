@@ -138,7 +138,7 @@ See [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md) for the short development history
 
 The display hardware used for this prototype was provided by Waveshare.
 Prototype assembly and bench work have also been supported with tools from
-Miniware, Fanttik and iFixit. KORADEM has confirmed support with a KA3005PS
+Miniware, Fanttik and iFixit. KORAD has confirmed support with a KA3005PS
 bench power supply; the unit is still awaiting shipment and has not been used
 for the current prototype.
 
