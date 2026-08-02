@@ -1,10 +1,10 @@
 # Wiring and pin assignments
 
-The Waveshare board carries the display interface internally. These are the pin
-assignments used by the current firmware and are recorded here mainly to make
-the source easier to audit.
+The prototype uses the original Waveshare SH1.0 breakout cable and a five-pin
+rotary encoder module. The AMOLED connections listed below are internal board
+connections; they are not wires that need to be added through the breakout.
 
-## AMOLED interface
+## Internal AMOLED interface
 
 | Signal | ESP32-S3 GPIO |
 |---|---:|
@@ -17,17 +17,35 @@ the source easier to audit.
 | QSPI data 3 | 15 |
 | Tearing-effect signal | 9 |
 
-## Rotary encoder
+These assignments match the Waveshare schematic and the current firmware.
 
-| Signal | ESP32-S3 GPIO |
-|---|---:|
-| Encoder A | 1 |
-| Encoder B | 2 |
-| Encoder push button | 0 |
+## External rotary encoder module
 
-The button uses the internal pull-up and is active low. GPIO0 also participates
-in the ESP32-S3 boot process, so avoid holding the encoder button while powering
-or resetting the board.
+| Encoder label | Connect to | Firmware function |
+|---|---|---|
+| `GND` | `GND` | Common ground |
+| `+` | `3V3` | Encoder module supply |
+| `SW` | `GPIO0` | Push button |
+| `CLK` | `GPIO1` | Encoder channel A |
+| `DT` | `GPIO2` | Encoder channel B |
+
+The encoder module must be powered from 3.3 V, not 5 V. The firmware enables
+pull-ups for both quadrature channels and the push button. `SW` is active low.
+
+GPIO0 is also the ESP32-S3 boot-strapping pin and is shared with the board's
+BOOT function. Avoid holding the encoder button while powering or resetting the
+board, as this may start the ROM download mode instead of the application.
+
+If rotation is reversed on another encoder module, swap `CLK` and `DT` or change
+`ENCODER_REVERSED` in the firmware. The current prototype uses the wiring shown
+above and does not require either change.
+
+## Additional tactile switches
+
+The housing includes positions for four 6 × 6 × 6 mm tactile switches. They do
+not have assigned GPIO pins and are not read by firmware `v0.1.0-poc`. Their
+electrical connections will be documented after the final control use case is
+selected.
 
 ## Notes
 
@@ -37,6 +55,10 @@ or resetting the board.
 - Four transitions are interpreted as one detent
 - The current display brightness value is 225
 
-Add photographs or a simple connection diagram here once the final cable route
-and external button wiring are fixed.
+## References
 
+- [Waveshare ESP32-S3-Touch-AMOLED-1.32 documentation](https://docs.waveshare.com/ESP32-S3-Touch-AMOLED-1.32)
+- [Official board schematic](https://files.waveshare.com/wiki/ESP32-S3-Touch-AMOLED-1.32/ESP32-S3-Touch-AMOLED-1.32-Schematic.pdf)
+
+A connector photograph or cable-color diagram will be added after the final
+cable route is fixed.
