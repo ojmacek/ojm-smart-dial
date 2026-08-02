@@ -22,9 +22,9 @@ Fanttik provided an E1 Max precision electric screwdriver used during assembly.
 
 iFixit provided a FixMat and Manta Driver Kit used during prototype work.
 
-## KORADEM
+## KORAD
 
-KORADEM has confirmed support with a KA3005PS bench power supply. Shipment and
+KORAD has confirmed support with a KA3005PS bench power supply. Shipment and
 tracking are still pending, so this supply has not been used for the version
 currently shown in the repository. This note should be updated after delivery.
 
