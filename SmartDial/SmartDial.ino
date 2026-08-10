@@ -6,7 +6,7 @@
 #include "esp_heap_caps.h"
 #include "SmartDial_Fonts_DINish.h"
 
-// Smart Dial V5.5 firmware for the Waveshare ESP32-S3 AMOLED 1.32.
+// Smart Dial V5.5.2 firmware for the Waveshare ESP32-S3 AMOLED 1.32.
 // Arduino_GFX handles the UI. LVGL is only used by logomodre256.c.
 // Keep the .ino, SmartDial_Fonts_DINish.h and logomodre256.c together.
 #define USE_EXISTING_LVGL_LOGO 1
@@ -45,7 +45,9 @@
 #define CAN_STATE_ID      0x201
 #define CAN_COMMAND_ID    0x301
 #define CAN_TX_PERIOD_MS  200UL
-#define CAN_RX_BUDGET     4
+#define CAN_RX_BUDGET     16
+#define CAN_TX_TASK_STACK 3072
+#define CAN_TX_TASK_PRIORITY 3
 
 #define LCD_W   466
 #define LCD_H   466
@@ -177,6 +179,19 @@ struct ClimateState {
   uint8_t seat;
 };
 
+// Keep this type with the global declarations. Arduino generates function
+// prototypes before compiling the sketch, so the type must already be known.
+struct CanCommandBatch {
+  bool accepted;
+  bool changed;
+  bool full_rebuild;
+  bool temperature_marker_may_move;
+  uint8_t dirty_pages;
+  uint8_t accepted_count;
+  uint8_t last_command;
+  uint8_t last_value;
+};
+
 static ClimateState climate = {
   true,
   true,
@@ -207,11 +222,14 @@ static bool g_marker_visible = false;
 static int16_t g_marker_x = LCD_CX;
 static int16_t g_marker_y = LCD_CY;
 
-static bool g_can_ready = false;
-static bool g_can_recovering = false;
+static volatile bool g_can_ready = false;
+static volatile bool g_can_recovering = false;
 static uint8_t g_can_alive_counter = 0;
-static uint32_t g_can_last_tx = 0;
-static uint32_t g_can_tx_failures = 0;
+static volatile uint32_t g_can_last_tx = 0;
+static volatile uint32_t g_can_tx_failures = 0;
+static TaskHandle_t g_can_tx_task_handle = nullptr;
+static portMUX_TYPE g_can_state_mux = portMUX_INITIALIZER_UNLOCKED;
+static uint8_t g_can_state_snapshot[6] = {};
 
 // ============================================================
 // SMALL HELPERS
@@ -1893,6 +1911,27 @@ static uint8_t can_checksum(const uint8_t *data, uint8_t length) {
   return checksum;
 }
 
+static void can_send_state();
+static void can_tx_task(void *parameter);
+
+static void can_publish_state_snapshot() {
+  uint8_t snapshot[6];
+  snapshot[0] =
+    (climate.power_on ? 0x01 : 0x00) |
+    (climate.ac_on ? 0x02 : 0x00);
+  snapshot[1] = (uint8_t)lroundf(climate.temperature * 2.0f);
+  snapshot[2] = climate.fan == FAN_AUTO
+    ? 0xFF
+    : (uint8_t)climate.fan;
+  snapshot[3] = climate.airflow;
+  snapshot[4] = climate.seat;
+  snapshot[5] = (uint8_t)g_page;
+
+  portENTER_CRITICAL(&g_can_state_mux);
+  memcpy(g_can_state_snapshot, snapshot, sizeof(snapshot));
+  portEXIT_CRITICAL(&g_can_state_mux);
+}
+
 static bool can_begin() {
   twai_general_config_t general = TWAI_GENERAL_CONFIG_DEFAULT(
     (gpio_num_t)CAN_TX_GPIO,
@@ -1921,6 +1960,23 @@ static bool can_begin() {
   g_can_ready = true;
   g_can_recovering = false;
   g_can_last_tx = millis();
+
+  can_publish_state_snapshot();
+  const BaseType_t task_result = xTaskCreatePinnedToCore(
+    can_tx_task,
+    "can-state-tx",
+    CAN_TX_TASK_STACK,
+    nullptr,
+    CAN_TX_TASK_PRIORITY,
+    &g_can_tx_task_handle,
+    0
+  );
+
+  if (task_result != pdPASS) {
+    g_can_tx_task_handle = nullptr;
+    Serial.println("CAN: state task unavailable, using loop fallback");
+  }
+
   return true;
 }
 
@@ -1933,16 +1989,10 @@ static void can_send_state() {
   message.rtr = 0;
   message.data_length_code = 8;
 
-  message.data[0] =
-    (climate.power_on ? 0x01 : 0x00) |
-    (climate.ac_on ? 0x02 : 0x00);
-  message.data[1] = (uint8_t)lroundf(climate.temperature * 2.0f);
-  message.data[2] = climate.fan == FAN_AUTO
-    ? 0xFF
-    : (uint8_t)climate.fan;
-  message.data[3] = climate.airflow;
-  message.data[4] = climate.seat;
-  message.data[5] = (uint8_t)g_page;
+  portENTER_CRITICAL(&g_can_state_mux);
+  memcpy(message.data, g_can_state_snapshot, sizeof(g_can_state_snapshot));
+  portEXIT_CRITICAL(&g_can_state_mux);
+
   message.data[6] = g_can_alive_counter & 0x0F;
   message.data[7] = can_checksum(message.data, 7);
 
@@ -1951,6 +2001,28 @@ static void can_send_state() {
   } else {
     ++g_can_tx_failures;
   }
+}
+
+static void can_tx_task(void *parameter) {
+  (void)parameter;
+
+  for (;;) {
+    ulTaskNotifyTake(pdTRUE, pdMS_TO_TICKS(CAN_TX_PERIOD_MS));
+    g_can_last_tx = millis();
+    can_send_state();
+  }
+}
+
+static void can_request_state_tx() {
+  can_publish_state_snapshot();
+
+  if (g_can_tx_task_handle != nullptr) {
+    xTaskNotifyGive(g_can_tx_task_handle);
+    return;
+  }
+
+  g_can_last_tx = millis();
+  can_send_state();
 }
 
 static void can_refresh_value_page(PageId page, bool marker_may_move) {
@@ -1969,7 +2041,15 @@ static void can_refresh_value_page(PageId page, bool marker_may_move) {
   }
 }
 
-static bool can_apply_command(const twai_message_t &message) {
+static void can_mark_page_dirty(CanCommandBatch &batch, PageId page) {
+  batch.changed = true;
+  batch.dirty_pages |= (uint8_t)(1U << (uint8_t)page);
+}
+
+static bool can_apply_command(
+  const twai_message_t &message,
+  CanCommandBatch &batch
+) {
   if (message.data_length_code < 2) return false;
 
   const uint8_t command = message.data[0];
@@ -1979,60 +2059,83 @@ static bool can_apply_command(const twai_message_t &message) {
     case CAN_CMD_SET_TEMPERATURE: {
       if (value < 32 || value > 60) return false;
       const float next = value * 0.5f;
-      if (fabsf(next - climate.temperature) < 0.01f) return false;
-      climate.temperature = next;
-      can_refresh_value_page(PAGE_TEMP, true);
-      return true;
+      if (fabsf(next - climate.temperature) >= 0.01f) {
+        climate.temperature = next;
+        batch.temperature_marker_may_move = true;
+        can_mark_page_dirty(batch, PAGE_TEMP);
+      }
+      break;
     }
 
     case CAN_CMD_SET_FAN: {
       if (value != 0xFF && value > 8) return false;
       const int8_t next = value == 0xFF ? FAN_AUTO : (int8_t)value;
-      if (next == climate.fan) return false;
-      climate.fan = next;
-      can_refresh_value_page(PAGE_FAN, false);
-      return true;
+      if (next != climate.fan) {
+        climate.fan = next;
+        can_mark_page_dirty(batch, PAGE_FAN);
+      }
+      break;
     }
 
-    case CAN_CMD_SET_AIRFLOW:
-      if (value > 3 || value == climate.airflow) return false;
-      climate.airflow = value;
-      can_refresh_value_page(PAGE_AIRFLOW, false);
-      return true;
+    case CAN_CMD_SET_AIRFLOW: {
+      if (value > 3) return false;
+      if (value != climate.airflow) {
+        climate.airflow = value;
+        can_mark_page_dirty(batch, PAGE_AIRFLOW);
+      }
+      break;
+    }
 
-    case CAN_CMD_SET_SEAT:
-      if (value > 3 || value == climate.seat) return false;
-      climate.seat = value;
-      can_refresh_value_page(PAGE_SEAT, false);
-      return true;
+    case CAN_CMD_SET_SEAT: {
+      if (value > 3) return false;
+      if (value != climate.seat) {
+        climate.seat = value;
+        can_mark_page_dirty(batch, PAGE_SEAT);
+      }
+      break;
+    }
 
     case CAN_CMD_SET_AC: {
       const bool next = value != 0;
-      if (next == climate.ac_on) return false;
-      climate.ac_on = next;
-      can_refresh_value_page(PAGE_TEMP, false);
-      return true;
+      if (next != climate.ac_on) {
+        climate.ac_on = next;
+        can_mark_page_dirty(batch, PAGE_TEMP);
+      }
+      break;
     }
 
     case CAN_CMD_SET_POWER: {
       const bool next = value != 0;
-      if (next == climate.power_on) return false;
-      climate.power_on = next;
-      g_edit_mode = false;
-      g_transition_active = false;
-      g_visual_animation_active = false;
-      g_visual_animation_phase = 1.0f;
-      g_requested_page = g_page;
-      rebuild_and_push_current_page();
-      return true;
+      if (next != climate.power_on) {
+        climate.power_on = next;
+        g_edit_mode = false;
+        g_transition_active = false;
+        g_visual_animation_active = false;
+        g_visual_animation_phase = 1.0f;
+        g_requested_page = g_page;
+        batch.changed = true;
+        batch.full_rebuild = true;
+      }
+      break;
     }
+
+    default:
+      return false;
   }
 
-  return false;
+  // Valid duplicate commands are accepted too. Sending a fresh state frame
+  // lets the ECU confirm a retry without forcing another display redraw.
+  batch.accepted = true;
+  ++batch.accepted_count;
+  batch.last_command = command;
+  batch.last_value = value;
+  return true;
 }
 
 static void can_receive_commands() {
   if (!g_can_ready || g_can_recovering) return;
+
+  CanCommandBatch batch = {};
 
   for (uint8_t count = 0; count < CAN_RX_BUDGET; ++count) {
     twai_message_t message;
@@ -2043,15 +2146,36 @@ static void can_receive_commands() {
       !message.rtr &&
       message.identifier == CAN_COMMAND_ID
     ) {
-      if (can_apply_command(message)) {
-        Serial.printf(
-          "CAN RX: command %02X value %02X\n",
-          message.data[0],
-          message.data[1]
-        );
-      }
+      can_apply_command(message, batch);
     }
   }
+
+  if (!batch.accepted) return;
+
+  // Publish only the final state from this batch. Drawing is intentionally
+  // done once, after the RX queue has been drained.
+  can_request_state_tx();
+
+  if (batch.full_rebuild) {
+    rebuild_and_push_current_page();
+  } else if (
+    batch.changed &&
+    g_page >= PAGE_TEMP &&
+    g_page < PAGE_COUNT &&
+    (batch.dirty_pages & (uint8_t)(1U << (uint8_t)g_page)) != 0
+  ) {
+    can_refresh_value_page(
+      (PageId)g_page,
+      g_page == PAGE_TEMP && batch.temperature_marker_may_move
+    );
+  }
+
+  Serial.printf(
+    "CAN RX: %u accepted, latest %02X %02X\n",
+    batch.accepted_count,
+    batch.last_command,
+    batch.last_value
+  );
 }
 
 static void can_handle_alerts() {
@@ -2084,10 +2208,12 @@ static void service_can() {
   can_handle_alerts();
   can_receive_commands();
 
-  const uint32_t now = millis();
-  if ((uint32_t)(now - g_can_last_tx) >= CAN_TX_PERIOD_MS) {
-    g_can_last_tx = now;
-    can_send_state();
+  if (g_can_tx_task_handle == nullptr) {
+    const uint32_t now = millis();
+    if ((uint32_t)(now - g_can_last_tx) >= CAN_TX_PERIOD_MS) {
+      g_can_last_tx = now;
+      can_send_state();
+    }
   }
 }
 
@@ -3263,6 +3389,7 @@ void loop() {
   update_visual_animation();
   start_page_transition_if_needed();
 
+  can_publish_state_snapshot();
   service_can();
 
   delay(1);
