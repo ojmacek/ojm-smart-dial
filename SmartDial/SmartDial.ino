@@ -2,10 +2,11 @@
 #include <Arduino_GFX_Library.h>
 #include <ESP32Encoder.h>
 #include "driver/gpio.h"
+#include "driver/twai.h"
 #include "esp_heap_caps.h"
 #include "SmartDial_Fonts_DINish.h"
 
-// Smart Dial v0.1.0-poc firmware for the Waveshare ESP32-S3 AMOLED 1.32.
+// Smart Dial V5.5 firmware for the Waveshare ESP32-S3 AMOLED 1.32.
 // Arduino_GFX handles the UI. LVGL is only used by logomodre256.c.
 // Keep the .ino, SmartDial_Fonts_DINish.h and logomodre256.c together.
 #define USE_EXISTING_LVGL_LOGO 1
@@ -37,6 +38,14 @@
 
 #define ENCODER_REVERSED              0
 #define ENCODER_TRANSITIONS_PER_STEP  4
+
+#define CAN_TX_GPIO  43
+#define CAN_RX_GPIO  44
+
+#define CAN_STATE_ID      0x201
+#define CAN_COMMAND_ID    0x301
+#define CAN_TX_PERIOD_MS  200UL
+#define CAN_RX_BUDGET     4
 
 #define LCD_W   466
 #define LCD_H   466
@@ -197,6 +206,12 @@ static bool g_animation_te_used = false;
 static bool g_marker_visible = false;
 static int16_t g_marker_x = LCD_CX;
 static int16_t g_marker_y = LCD_CY;
+
+static bool g_can_ready = false;
+static bool g_can_recovering = false;
+static uint8_t g_can_alive_counter = 0;
+static uint32_t g_can_last_tx = 0;
+static uint32_t g_can_tx_failures = 0;
 
 // ============================================================
 // SMALL HELPERS
@@ -1861,6 +1876,222 @@ static void handle_button(ButtonEvent event) {
 }
 
 // ============================================================
+// CAN BUS
+// ============================================================
+static constexpr uint8_t CAN_CMD_SET_TEMPERATURE = 0x01;
+static constexpr uint8_t CAN_CMD_SET_FAN         = 0x02;
+static constexpr uint8_t CAN_CMD_SET_AIRFLOW     = 0x03;
+static constexpr uint8_t CAN_CMD_SET_SEAT        = 0x04;
+static constexpr uint8_t CAN_CMD_SET_AC          = 0x05;
+static constexpr uint8_t CAN_CMD_SET_POWER       = 0x06;
+
+static uint8_t can_checksum(const uint8_t *data, uint8_t length) {
+  uint8_t checksum = 0;
+  for (uint8_t index = 0; index < length; ++index) {
+    checksum ^= data[index];
+  }
+  return checksum;
+}
+
+static bool can_begin() {
+  twai_general_config_t general = TWAI_GENERAL_CONFIG_DEFAULT(
+    (gpio_num_t)CAN_TX_GPIO,
+    (gpio_num_t)CAN_RX_GPIO,
+    TWAI_MODE_NORMAL
+  );
+  twai_timing_config_t timing = TWAI_TIMING_CONFIG_500KBITS();
+  twai_filter_config_t filter = TWAI_FILTER_CONFIG_ACCEPT_ALL();
+
+  general.tx_queue_len = 8;
+  general.rx_queue_len = 16;
+  general.alerts_enabled =
+    TWAI_ALERT_TX_FAILED |
+    TWAI_ALERT_BUS_OFF |
+    TWAI_ALERT_BUS_RECOVERED;
+
+  if (twai_driver_install(&general, &timing, &filter) != ESP_OK) {
+    return false;
+  }
+
+  if (twai_start() != ESP_OK) {
+    twai_driver_uninstall();
+    return false;
+  }
+
+  g_can_ready = true;
+  g_can_recovering = false;
+  g_can_last_tx = millis();
+  return true;
+}
+
+static void can_send_state() {
+  if (!g_can_ready || g_can_recovering) return;
+
+  twai_message_t message = {};
+  message.identifier = CAN_STATE_ID;
+  message.extd = 0;
+  message.rtr = 0;
+  message.data_length_code = 8;
+
+  message.data[0] =
+    (climate.power_on ? 0x01 : 0x00) |
+    (climate.ac_on ? 0x02 : 0x00);
+  message.data[1] = (uint8_t)lroundf(climate.temperature * 2.0f);
+  message.data[2] = climate.fan == FAN_AUTO
+    ? 0xFF
+    : (uint8_t)climate.fan;
+  message.data[3] = climate.airflow;
+  message.data[4] = climate.seat;
+  message.data[5] = (uint8_t)g_page;
+  message.data[6] = g_can_alive_counter & 0x0F;
+  message.data[7] = can_checksum(message.data, 7);
+
+  if (twai_transmit(&message, 0) == ESP_OK) {
+    g_can_alive_counter = (g_can_alive_counter + 1) & 0x0F;
+  } else {
+    ++g_can_tx_failures;
+  }
+}
+
+static void can_refresh_value_page(PageId page, bool marker_may_move) {
+  if (!climate.power_on || g_page != page) return;
+
+  if (page != PAGE_TEMP) {
+    g_visual_animation_phase = 0.0f;
+    g_visual_animation_active = true;
+    g_visual_animation_last_frame = 0;
+  }
+
+  refresh_dynamic_ui(marker_may_move, false);
+
+  if (g_visual_animation_active) {
+    g_visual_animation_started = millis();
+  }
+}
+
+static bool can_apply_command(const twai_message_t &message) {
+  if (message.data_length_code < 2) return false;
+
+  const uint8_t command = message.data[0];
+  const uint8_t value = message.data[1];
+
+  switch (command) {
+    case CAN_CMD_SET_TEMPERATURE: {
+      if (value < 32 || value > 60) return false;
+      const float next = value * 0.5f;
+      if (fabsf(next - climate.temperature) < 0.01f) return false;
+      climate.temperature = next;
+      can_refresh_value_page(PAGE_TEMP, true);
+      return true;
+    }
+
+    case CAN_CMD_SET_FAN: {
+      if (value != 0xFF && value > 8) return false;
+      const int8_t next = value == 0xFF ? FAN_AUTO : (int8_t)value;
+      if (next == climate.fan) return false;
+      climate.fan = next;
+      can_refresh_value_page(PAGE_FAN, false);
+      return true;
+    }
+
+    case CAN_CMD_SET_AIRFLOW:
+      if (value > 3 || value == climate.airflow) return false;
+      climate.airflow = value;
+      can_refresh_value_page(PAGE_AIRFLOW, false);
+      return true;
+
+    case CAN_CMD_SET_SEAT:
+      if (value > 3 || value == climate.seat) return false;
+      climate.seat = value;
+      can_refresh_value_page(PAGE_SEAT, false);
+      return true;
+
+    case CAN_CMD_SET_AC: {
+      const bool next = value != 0;
+      if (next == climate.ac_on) return false;
+      climate.ac_on = next;
+      can_refresh_value_page(PAGE_TEMP, false);
+      return true;
+    }
+
+    case CAN_CMD_SET_POWER: {
+      const bool next = value != 0;
+      if (next == climate.power_on) return false;
+      climate.power_on = next;
+      g_edit_mode = false;
+      g_transition_active = false;
+      g_visual_animation_active = false;
+      g_visual_animation_phase = 1.0f;
+      g_requested_page = g_page;
+      rebuild_and_push_current_page();
+      return true;
+    }
+  }
+
+  return false;
+}
+
+static void can_receive_commands() {
+  if (!g_can_ready || g_can_recovering) return;
+
+  for (uint8_t count = 0; count < CAN_RX_BUDGET; ++count) {
+    twai_message_t message;
+    if (twai_receive(&message, 0) != ESP_OK) break;
+
+    if (
+      !message.extd &&
+      !message.rtr &&
+      message.identifier == CAN_COMMAND_ID
+    ) {
+      if (can_apply_command(message)) {
+        Serial.printf(
+          "CAN RX: command %02X value %02X\n",
+          message.data[0],
+          message.data[1]
+        );
+      }
+    }
+  }
+}
+
+static void can_handle_alerts() {
+  if (!g_can_ready) return;
+
+  uint32_t alerts = 0;
+  if (twai_read_alerts(&alerts, 0) != ESP_OK) return;
+
+  if (alerts & TWAI_ALERT_TX_FAILED) {
+    ++g_can_tx_failures;
+  }
+
+  if (alerts & TWAI_ALERT_BUS_OFF) {
+    Serial.println("CAN: bus off, starting recovery");
+    g_can_recovering = twai_initiate_recovery() == ESP_OK;
+  }
+
+  if (alerts & TWAI_ALERT_BUS_RECOVERED) {
+    if (twai_start() == ESP_OK) {
+      g_can_recovering = false;
+      g_can_last_tx = millis();
+      Serial.println("CAN: recovered");
+    }
+  }
+}
+
+static void service_can() {
+  if (!g_can_ready) return;
+
+  can_handle_alerts();
+  can_receive_commands();
+
+  const uint32_t now = millis();
+  if ((uint32_t)(now - g_can_last_tx) >= CAN_TX_PERIOD_MS) {
+    g_can_last_tx = now;
+    can_send_state();
+  }
+}
+
+// ============================================================
 // STARTUP ARC LOADER
 // ============================================================
 #define STARTUP_SETTLE_MS       220
@@ -2967,7 +3198,7 @@ static void allocate_buffers() {
 void setup() {
   Serial.begin(115200);
   delay(150);
-  Serial.println("BOOT: Smart Dial v0.1.0-poc");
+  Serial.println("BOOT: Smart Dial PREMIUM SNAPPY V5.5 CAN");
 
   pinMode(ENCODER_BUTTON, INPUT_PULLUP);
 
@@ -3008,6 +3239,12 @@ g_encoder_substeps = 0;
       PUSH_BYTES
     ) / 1024.0f
   );
+
+  if (can_begin()) {
+    Serial.println("CAN: ready | 500 kbit/s | TX 0x201 | RX 0x301");
+  } else {
+    Serial.println("CAN: initialization failed, UI remains available");
+  }
 }
 
 void loop() {
@@ -3025,6 +3262,8 @@ void loop() {
   update_page_transition();
   update_visual_animation();
   start_page_transition_if_needed();
+
+  service_can();
 
   delay(1);
 }
