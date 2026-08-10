@@ -6,6 +6,7 @@ import sys
 import threading
 import time
 import tkinter as tk
+from collections import OrderedDict
 from dataclasses import dataclass
 from pathlib import Path
 from tkinter import messagebox, ttk
@@ -22,8 +23,8 @@ APP_TITLE = "OJM Systems · Vehicle ECU Simulator"
 CAN_BITRATE = 500_000
 CAN_STATE_ID = 0x201
 CAN_COMMAND_ID = 0x301
-OFFLINE_TIMEOUT_S = 0.80
-ACK_TIMEOUT_S = 0.45
+OFFLINE_TIMEOUT_S = 1.20
+ACK_TIMEOUT_S = 0.60
 MAX_COMMAND_ATTEMPTS = 3
 
 CMD_TEMPERATURE = 0x01
@@ -183,10 +184,33 @@ class CanWorker(threading.Thread):
         )
         return True
 
+    def collect_latest_commands(
+        self,
+        pending: PendingCommand | None,
+        waiting: OrderedDict[int, PendingCommand],
+    ) -> PendingCommand | None:
+        """Keep only the newest requested value for each command type."""
+        while True:
+            try:
+                command = self.commands.get_nowait()
+            except queue.Empty:
+                break
+
+            if pending is not None and command.command == pending.command:
+                pending = command
+                continue
+
+            # Reinsert the key so another control already waiting gets a turn.
+            waiting.pop(command.command, None)
+            waiting[command.command] = command
+
+        return pending
+
     def run(self) -> None:
         online = False
         last_valid_state_at = 0.0
         pending: PendingCommand | None = None
+        waiting: OrderedDict[int, PendingCommand] = OrderedDict()
 
         try:
             self.emit("connection", "OPENING")
@@ -203,11 +227,11 @@ class CanWorker(threading.Thread):
             while not self.stop_event.is_set():
                 now = time.monotonic()
 
+                pending = self.collect_latest_commands(pending, waiting)
+
                 if pending is None:
-                    try:
-                        pending = self.commands.get_nowait()
-                    except queue.Empty:
-                        pass
+                    if waiting:
+                        _, pending = waiting.popitem(last=False)
 
                 if pending is not None and online:
                     should_send = pending.attempts == 0
@@ -799,7 +823,9 @@ class VehicleEcuSimulator(tk.Tk):
             self.set_commands_enabled(True)
         elif state == "OFFLINE":
             self.status_label.configure(fg=RED)
-            self.connection_detail_var.set("No valid state frame for 800 ms")
+            self.connection_detail_var.set(
+                f"No valid state frame for {OFFLINE_TIMEOUT_S:.1f} s"
+            )
             self.set_commands_enabled(False)
             self.latest_state = None
         elif state == "DISCONNECTED":
