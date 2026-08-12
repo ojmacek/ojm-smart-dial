@@ -6,11 +6,13 @@
 ![CAN](https://img.shields.io/badge/CAN-500%20kbit%2Fs-1687FF)
 
 Smart Dial is a compact automotive control interface built around a rotary
-encoder and a round AMOLED display. It is being developed as a bachelor-project
+encoder and a round AMOLED display. It is developed as a bachelor’s project at VSB - Technical University of Ostrava as a
 proof of concept focused on mechanical design, physical interaction, responsive
 graphics and communication with a simulated vehicle over CAN.
 
 ![Current Smart Dial interface](assets/ui-preview.png)
+
+[Watch the current working prototype demonstration](https://www.youtube.com/watch?v=JF2uquMCpn4&t=3s)
 
 The prototype uses the
 [Waveshare ESP32-S3-Touch-AMOLED-1.32](https://www.waveshare.com/esp32-s3-touch-amoled-1.32.htm),
