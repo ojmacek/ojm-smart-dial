@@ -1,5 +1,28 @@
 # Smart Dial
 
+## Latest DDE sources
+
+The current DDE source work is in
+[DDE_V6_0_5_3_DYNAMICS](DDE_V6_0_5_3_DYNAMICS/README.md). It is a **work in
+progress**, with the browse/edit transition fix and RWS display order
+AUTO → STABLE → AGILE → OFF. Validation and the requested conversion to one
+Arduino file are still pending; see its
+[status notes](DDE_V6_0_5_3_DYNAMICS/GITHUB_STATUS_CZ.md).
+
+The last validated DDE source revision is
+[V6.0.5.2](DDE_V6_0_5_2_DYNAMICS/README.md), including the CO5300 partial-update
+alignment fix. Its recorded test results are in
+[VALIDATION.md](DDE_V6_0_5_2_DYNAMICS/VALIDATION.md). Firmware images, executable
+builds, animation exports and local environments are not included in this
+source commit. Historical integrity audits require the earlier local revision
+directories; their manifests are included for reference.
+
+The original `SmartDial/` and `VehicleEcuSimulator/` climate implementation is
+preserved below as the earlier CAN proof of concept. DDE uses its own firmware,
+PC application and documented CAN protocol.
+
+## Earlier climate prototype
+
 ![Project status](https://img.shields.io/badge/status-CAN%20proof%20of%20concept-247DFE)
 ![Platform](https://img.shields.io/badge/platform-ESP32--S3-white)
 ![Display](https://img.shields.io/badge/display-466%C3%97466%20AMOLED-F72545)

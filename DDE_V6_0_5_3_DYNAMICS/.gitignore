@@ -1,0 +1,13 @@
+.venv/
+**/.venv/
+**/__pycache__/
+**/build/
+.build/
+**/dist/
+**/.pytest_cache/
+*.pyc
+*.bin
+*.zip
+*.zip.sha256
+.env
+.env.*

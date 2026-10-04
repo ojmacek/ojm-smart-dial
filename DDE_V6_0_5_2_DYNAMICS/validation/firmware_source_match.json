@@ -1,0 +1,27 @@
+{
+  "status": "PASS",
+  "compiled_headers_match_final_sources": true,
+  "comparison": "Arduino #line directive and CRLF normalization only",
+  "source_sha256": {
+    "build_opt.h": "3085eea84d86fe83b2fd9d4d94718451b132767455a4e29560831e58c166ab34",
+    "src/ArtFont.h": "1afdf4827a22befe02085d6f339d7ff80f5afcfff239b0580af08c09824b61e3",
+    "src/ArtLogo.h": "062ec144faf15ad3d3322123a6caaf4e666c651533f0144b90694996b8522ddf",
+    "src/ArtTop.h": "243bcce0324671ba6279933b7d836b5b805127276d37a1655aeafc8f841d39da",
+    "src/BaselineGraphics.h": "6d3233e6ef9eab524327a1001492215dff3a7d0d7fe3de2ad5cf60a968a721d9",
+    "src/BaselineInput.h": "6c01a157387efdc51e60e8f0aefbabf948bfc7d857d76a03afcfb8413bae1b96",
+    "src/BaselineShapes.h": "3aa0bc003ed76bcaa947b3dbc3c80b37f436493c042abecf1f78856cb445a2dd",
+    "src/CanTransport.h": "5e8e6297c09714cb817f2b0b42da92c84e41c0494b4827660eebc8c85615dc76",
+    "src/DdeFonts.h": "c63fffc7bc97d6a9459aa07e7970ecd39d3382637f976d54816636e990145401",
+    "src/DdeNavigation.h": "a2817977a8af55a1776fea98b78301702c09317bfc10ccd98fdcbb241823f468",
+    "src/DdeProtocol.h": "ff79f37696a3093470b0db597a36e2b3e414576b95fda4caafd1fc7d39af0ff3",
+    "src/DdeRenderer.h": "b7b8d0f1db7081f589f357dbfbe88b87749848cbeaf3024d86e14f6eb65a600b",
+    "src/DynamicsModel.h": "a129256f354fc239ef6b36604c843bea67df875480a2ce50b93ad87caded7409",
+    "src/LocalPresentation.h": "edfa619fcaf92a4d2a77a6a02f1b25eca6540bbe9d46ad4fd38dc68b20d032f8",
+    "src/OjmLogo.h": "b72fe98d1ce02311e6c9c9076968989264be65789d263bceed2323261e1368b1",
+    "src/SmartDial_Fonts_DINish.h": "65439d71c61e0a28adf834dd654f53d4334d24f4a1bccb5010e85a01f3936403",
+    "src/TitanAssets.h": "ed81c5f3478f41649fd1635e745edd0cbc68174e32f3d1fa08dcaa3c6fd409c9",
+    "src/TitanStrokes.h": "dcf91abd21963d3e9368df7bfcdf045fcc37c7d8dc4473907615f14e84ffda1b",
+    "OJM_DDE_Dynamics.ino": "7df12ce8f427ff36e6d368024d50c6f37b28c35494816d8ab7929fad3392649f"
+  },
+  "merged_sha256": "aef8f7efd66cdcf6b20d41bc4c97b8d543f4e7158a7667af11284680d4e52c1e"
+}

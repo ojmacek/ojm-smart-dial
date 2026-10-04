@@ -1,0 +1,75 @@
+r16_t* __str, size_t __len) {
+      |                           ^
+      |                             _Nullable
+C:\OJM-Smart-Dial\DDE_V6_0_2_DYNAMICS\.venv\Lib\site-packages\ziglang\lib\libcxx\include/string:3999:27: note: insert '_Nonnull' if the pointer should never be null
+ 3999 | operator""s(const char16_t* __str, size_t __len) {
+      |                           ^
+      |                             _Nonnull
+C:\OJM-Smart-Dial\DDE_V6_0_2_DYNAMICS\.venv\Lib\site-packages\ziglang\lib\libcxx\include/string:3987:26: warning: pointer is missing a nullability type specifier (_Nonnull, _Nullable, or _Null_unspecified) [-Wnullability-completeness]
+ 3987 | operator""s(const wchar_t* __str, size_t __len) {
+      |                          ^
+C:\OJM-Smart-Dial\DDE_V6_0_2_DYNAMICS\.venv\Lib\site-packages\ziglang\lib\libcxx\include/string:3987:26: note: insert '_Nullable' if the pointer may be null
+ 3987 | operator""s(const wchar_t* __str, size_t __len) {
+      |                          ^
+      |                            _Nullable
+C:\OJM-Smart-Dial\DDE_V6_0_2_DYNAMICS\.venv\Lib\site-packages\ziglang\lib\libcxx\include/string:3987:26: note: insert '_Nonnull' if the pointer should never be null
+ 3987 | operator""s(const wchar_t* __str, size_t __len) {
+      |                          ^
+      |                            _Nonnull
+C:\OJM-Smart-Dial\DDE_V6_0_2_DYNAMICS\.venv\Lib\site-packages\ziglang\lib\libcxx\include/string:3993:87: warning: pointer is missing a nullability type specifier (_Nonnull, _Nullable, or _Null_unspecified) [-Wnullability-completeness]
+ 3993 | inline _LIBCPP_HIDE_FROM_ABI constexpr basic_string<char8_t> operator""s(const char8_t* __str, size_t __len) {
+      |                                                                                       ^
+C:\OJM-Smart-Dial\DDE_V6_0_2_DYNAMICS\.venv\Lib\site-packages\ziglang\lib\libcxx\include/string:3993:87: note: insert '_Nullable' if the pointer may be null
+ 3993 | inline _LIBCPP_HIDE_FROM_ABI constexpr basic_string<char8_t> operator""s(const char8_t* __str, size_t __len) {
+      |                                                                                       ^
+      |                                                                                         _Nullable
+C:\OJM-Smart-Dial\DDE_V6_0_2_DYNAMICS\.venv\Lib\site-packages\ziglang\lib\libcxx\include/string:3993:87: note: insert '_Nonnull' if the pointer should never be null
+ 3993 | inline _LIBCPP_HIDE_FROM_ABI constexpr basic_string<char8_t> operator""s(const char8_t* __str, size_t __len) {
+      |                                                                                       ^
+      |                                                                                         _Nonnull
+C:\OJM-Smart-Dial\DDE_V6_0_2_DYNAMICS\.venv\Lib\site-packages\ziglang\lib\libcxx\include/string:3999:27: warning: pointer is missing a nullability type specifier (_Nonnull, _Nullable, or _Null_unspecified) [-Wnullability-completeness]
+ 3999 | operator""s(const char16_t* __str, size_t __len) {
+      |                           ^
+C:\OJM-Smart-Dial\DDE_V6_0_2_DYNAMICS\.venv\Lib\site-packages\ziglang\lib\libcxx\include/string:3999:27: note: insert '_Nullable' if the pointer may be null
+ 3999 | operator""s(const char16_t* __str, size_t __len) {
+      |                           ^
+      |                             _Nullable
+C:\OJM-Smart-Dial\DDE_V6_0_2_DYNAMICS\.venv\Lib\site-packages\ziglang\lib\libcxx\include/string:3999:27: note: insert '_Nonnull' if the pointer should never be null
+ 3999 | operator""s(const char16_t* __str, size_t __len) {
+      |                           ^
+      |                             _Nonnull
+C:\OJM-Smart-Dial\DDE_V6_0_2_DYNAMICS\.venv\Lib\site-packages\ziglang\lib\libcxx\include/string:4004:27: warning: pointer is missing a nullability type specifier (_Nonnull, _Nullable, or _Null_unspecified) [-Wnullability-completeness]
+ 4004 | operator""s(const char32_t* __str, size_t __len) {
+      |                           ^
+C:\OJM-Smart-Dial\DDE_V6_0_2_DYNAMICS\.venv\Lib\site-packages\ziglang\lib\libcxx\include/string:4004:27: note: insert '_Nullable' if the pointer may be null
+ 4004 | operator""s(const char32_t* __str, size_t __len) {
+      |                           ^
+      |                             _Nullable
+C:\OJM-Smart-Dial\DDE_V6_0_2_DYNAMICS\.venv\Lib\site-packages\ziglang\lib\libcxx\include/string:4004:27: note: insert '_Nonnull' if the pointer should never be null
+ 4004 | operator""s(const char32_t* __str, size_t __len) {
+      |                           ^
+      |                             _Nonnull
+C:\OJM-Smart-Dial\DDE_V6_0_2_DYNAMICS\.venv\Lib\site-packages\ziglang\lib\libcxx\include/string:4004:27: warning: pointer is missing a nullability type specifier (_Nonnull, _Nullable, or _Null_unspecified) [-Wnullability-completeness]
+ 4004 | operator""s(const char32_t* __str, size_t __len) {
+      |                           ^
+C:\OJM-Smart-Dial\DDE_V6_0_2_DYNAMICS\.venv\Lib\site-packages\ziglang\lib\libcxx\include/string:4004:27: note: insert '_Nullable' if the pointer may be null
+ 4004 | operator""s(const char32_t* __str, size_t __len) {
+      |                           ^
+      |                             _Nullable
+C:\OJM-Smart-Dial\DDE_V6_0_2_DYNAMICS\.venv\Lib\site-packages\ziglang\lib\libcxx\include/string:4004:27: note: insert '_Nonnull' if the pointer should never be null
+ 4004 | operator""s(const char32_t* __str, size_t __len) {
+      |                           ^
+      |                             _Nonnull
+119 warnings generated.
+119 warnings generated.
+119 warnings generated.
+119 warnings generated.
+119 warnings generated.
+119 warnings generated.
+119 warnings generated.
+119 warnings generated.
+119 warnings generated.
+(node:13512) ExperimentalWarning: WASI is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+FAIL CO5300 unaligned transfer x=50 y=130 w=368 h=155 at 16 ms
+

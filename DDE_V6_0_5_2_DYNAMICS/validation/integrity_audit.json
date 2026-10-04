@@ -1,0 +1,55 @@
+{
+  "status": "PASS",
+  "preserved_v601_files": 91,
+  "preserved_v602_files": 122,
+  "preserved_v603_files": 103,
+  "protocol_changes": [
+    "startup defaults",
+    "requested Air Brake value 3"
+  ],
+  "ack_engine_unchanged": true,
+  "unchanged_modules": [
+    "OJM_DDE_Dynamics/CanTransport.h",
+    "OJM_DDE_Dynamics/BaselineGraphics.h",
+    "OJM_DDE_Dynamics/BaselineShapes.h",
+    "OJM_DDE_Dynamics/BaselineInput.h",
+    "OJM_DDE_Dynamics/build_opt.h",
+    "OJM_DDE_Dynamics/TitanAssets.h",
+    "OJM_DDE_Dynamics/DdeFonts.h",
+    "OJM_DDE_Dynamics/OjmLogo.h",
+    "Vehicle_ECU_Simulator/adapters.py"
+  ],
+  "hardware_setup_unchanged": true,
+  "v561_present": false,
+  "note": "V5.6.1 not present in this workspace; historical V5.6.1 audit remains in the previous revisions only.",
+  "preserved_v604_files": 112,
+  "original_top_reference_preserved": true,
+  "v605_can_protocol_and_worker_unchanged_from_v604": true,
+  "preserved_v605_files": 125,
+  "pc_sources_and_exe_unchanged_from_v605": true,
+  "preserved_v6051_files": 117,
+  "v6052_firmware_changes": [
+    "dirty rectangle alignment before restore/draw/transfer",
+    "serial version string"
+  ],
+  "v6052_unchanged_firmware_files": [
+    "build_opt.h",
+    "DINish_OFL.txt",
+    "src/ArtFont.h",
+    "src/ArtLogo.h",
+    "src/ArtTop.h",
+    "src/BaselineGraphics.h",
+    "src/BaselineInput.h",
+    "src/BaselineShapes.h",
+    "src/CanTransport.h",
+    "src/DdeFonts.h",
+    "src/DdeNavigation.h",
+    "src/DdeProtocol.h",
+    "src/DynamicsModel.h",
+    "src/LocalPresentation.h",
+    "src/OjmLogo.h",
+    "src/SmartDial_Fonts_DINish.h",
+    "src/TitanAssets.h",
+    "src/TitanStrokes.h"
+  ]
+}

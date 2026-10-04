@@ -1,0 +1,16 @@
+{
+  "status": "PASS",
+  "source": "actual C++ renderer/model headers",
+  "execution": "WebAssembly/WASI",
+  "hardware": "stubbed QSPI/TE/CAN and clock; not hardware FPS validation",
+  "sequences": {
+    "startup": 240,
+    "menu": 60,
+    "rws": 90,
+    "torque": 90,
+    "aero": 90,
+    "standalone_rws": 360,
+    "standalone_vectoring": 360,
+    "standalone_aero": 360
+  }
+}

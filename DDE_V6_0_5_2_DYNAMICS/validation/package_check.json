@@ -1,0 +1,9 @@
+{
+  "status": "PASS",
+  "archive_entries": 122,
+  "all_entries_byte_equal_to_source": true,
+  "zip_crc_checked": true,
+  "required_files_present": true,
+  "baseline_archives_excluded": true,
+  "environments_and_caches_excluded": true
+}

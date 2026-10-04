@@ -1,0 +1,9 @@
+PASS CO5300: 22 patterned transfers, all parity combinations, clipping, empty, merge and overflow
+PASS: 512 pulse/echo phases never cross the body outline; rail morph, end-stop, latest-wins and airflow delay.
+PASS: 101 logo reveal widths preserve fixed-size source pixels; no zoom or scaling.
+PASS: 3358 frames; full-panel transfer and clean-render equality; browse/edit navigation; bursts; all standalone modes including AIR BRAKE; legacy telemetry isolation; offline/stalls; startup/skip.
+Max live vectoring: 80052 pixels/frame; mode-driven standalone animation. Max including scene entry/startup: 151032.
+Host QSPI/TE stubs; these are pixel budgets, NOT measured ESP32 FPS or latency.
+(node:10728) ExperimentalWarning: WASI is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+

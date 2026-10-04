@@ -1,0 +1,14 @@
+[
+  {
+    "Path": "C:\\Users\\mrojm\\Documents\\Arduino\\libraries\\GFX_Library_for_Arduino\\src\\display\\Arduino_CO5300.cpp",
+    "Hash": "B9A36FE5D81DA061F4C9C4BA10354BA2FD5259064C3F4AD14C4BB3412725AA59"
+  },
+  {
+    "Path": "C:\\Users\\mrojm\\Documents\\Arduino\\libraries\\GFX_Library_for_Arduino\\src\\Arduino_TFT.cpp",
+    "Hash": "DD1E2C556C9034411239F4169F15A425EBAFA56125E10023F8E2D3B881D3BB6A"
+  },
+  {
+    "Path": "C:\\Users\\mrojm\\Documents\\Arduino\\libraries\\GFX_Library_for_Arduino\\src\\databus\\Arduino_ESP32QSPI.cpp",
+    "Hash": "2A949FE68C4C09F6E9E3E2E8FEC75232C01B9B207815DDB3EC98949C8C268620"
+  }
+]
