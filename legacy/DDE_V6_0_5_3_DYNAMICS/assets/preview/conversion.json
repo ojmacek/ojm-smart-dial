@@ -1,0 +1,67 @@
+{
+  "logo": {
+    "source": "ojm_logo.svg",
+    "source_crop": [
+      322,
+      532,
+      1020,
+      814
+    ],
+    "size": [
+      256,
+      103
+    ],
+    "span_bytes": 10036,
+    "original_bitmap_bytes": 204800,
+    "conversion": "resvg-py 0.5.0, white compositing, 4-bit coverage"
+  },
+  "fold_steps": 32,
+  "top": {
+    "source_crop": [
+      298,
+      107,
+      725,
+      917
+    ],
+    "size": [
+      138,
+      264
+    ]
+  },
+  "side": {
+    "source_crop": [
+      106,
+      405,
+      919,
+      619
+    ],
+    "size": [
+      350,
+      94
+    ]
+  },
+  "front": {
+    "source_crop": [
+      102,
+      266,
+      921,
+      757
+    ],
+    "size": [
+      210,
+      126
+    ]
+  },
+  "rear": {
+    "source_crop": [
+      106,
+      283,
+      917,
+      741
+    ],
+    "size": [
+      210,
+      119
+    ]
+  }
+}

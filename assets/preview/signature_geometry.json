@@ -1,0 +1,35 @@
+{
+  "source_sha256": "b56d60641c427f7d75cb1cad4fa4d7c515036cc7a3c5a870c36af59cae96ac5b",
+  "logo_size": [
+    280,
+    114
+  ],
+  "position": [
+    93,
+    176
+  ],
+  "order": [
+    "O",
+    "J",
+    "M"
+  ],
+  "brush_diameters": [
+    26,
+    26,
+    40
+  ],
+  "track_pixels": 2085.5920601482085,
+  "track_samples": 1025,
+  "trace_samples": 513,
+  "ink_pixels": 14358,
+  "letter_pixels": [
+    3547,
+    1847,
+    4415,
+    4549
+  ],
+  "feather_units": 47,
+  "native_bytes": 112148,
+  "all_original_ink_covered": true,
+  "runtime_png_svg_decode": false
+}

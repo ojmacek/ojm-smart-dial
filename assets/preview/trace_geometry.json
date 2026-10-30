@@ -1,0 +1,6 @@
+{
+  "segments": 512,
+  "ordered_coverage_events": 3512,
+  "native_bytes": 15074,
+  "source": "actual C++ art_line coverage, same segment and pixel order"
+}

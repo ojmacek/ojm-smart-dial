@@ -1,265 +1,242 @@
-# Smart Dial
+<p align="center">
+  <img src="docs/media/hero.png" alt="CANertia: Torus faces showing Launch Control, Active Aero and Rear Wheel Steering." width="100%">
+</p>
 
-## Latest DDE sources
+<p align="center">
+  <img alt="Platform" src="https://img.shields.io/badge/platform-ESP32--S3-1B2028?style=flat-square&labelColor=14171C">
+  <img alt="Display" src="https://img.shields.io/badge/display-466%C3%97466%20AMOLED-1B2028?style=flat-square&labelColor=14171C">
+  <img alt="Frame rate" src="https://img.shields.io/badge/UI-~60%20fps-0038FF?style=flat-square&labelColor=14171C">
+  <img alt="CAN" src="https://img.shields.io/badge/CAN-500%20kbit%2Fs-1B2028?style=flat-square&labelColor=14171C">
+  <img alt="Studio" src="https://img.shields.io/badge/Studio-Python%20%2B%20Qt-1B2028?style=flat-square&labelColor=14171C">
+</p>
 
-The current DDE source work is in
-[DDE_V6_0_5_3_DYNAMICS](DDE_V6_0_5_3_DYNAMICS/README.md). It is a **work in
-progress**, with the browse/edit transition fix and RWS display order
-AUTO → STABLE → AGILE → OFF. Validation and the requested conversion to one
-Arduino file are still pending; see its
-[status notes](DDE_V6_0_5_3_DYNAMICS/GITHUB_STATUS_CZ.md).
+# CANertia
 
-The last validated DDE source revision is
-[V6.0.5.2](DDE_V6_0_5_2_DYNAMICS/README.md), including the CO5300 partial-update
-alignment fix. Its recorded test results are in
-[VALIDATION.md](DDE_V6_0_5_2_DYNAMICS/VALIDATION.md). Firmware images, executable
-builds, animation exports and local environments are not included in this
-source commit. Historical integrity audits require the earlier local revision
-directories; their manifests are included for reference.
+This is my bachelor's project at VSB – Technical University of Ostrava: a **smart rotary controller for a sporty
+electric car**. I call the device **Torus** and its software **CANertia**. On my bench I test it with **CANertia
+Studio**, a PC app I wrote that pretends to be the car.
 
-The original `SmartDial/` and `VehicleEcuSimulator/` climate implementation is
-preserved below as the earlier CAN proof of concept. DDE uses its own firmware,
-PC application and documented CAN protocol.
+The idea behind the project is simple: a physical knob in a car should know what the car is doing. A Torus reads the
+car's state over CAN (speed, parked / driving / charging, braking), and it changes what it offers and what it lets you
+choose. It still works completely on its own, without a PC or an ECU.
 
-## Earlier climate prototype
-
-![Project status](https://img.shields.io/badge/status-CAN%20proof%20of%20concept-247DFE)
-![Platform](https://img.shields.io/badge/platform-ESP32--S3-white)
-![Display](https://img.shields.io/badge/display-466%C3%97466%20AMOLED-F72545)
-![CAN](https://img.shields.io/badge/CAN-500%20kbit%2Fs-1687FF)
-
-Smart Dial is a compact automotive control interface built around a rotary
-encoder and a round AMOLED display. It is developed as a bachelor’s project at VSB - Technical University of Ostrava as a
-proof of concept focused on mechanical design, physical interaction, responsive
-graphics and communication with a simulated vehicle over CAN.
-
-![Current Smart Dial interface](assets/ui-preview.png)
-
-[Watch the current working prototype demonstration](https://www.youtube.com/watch?v=JF2uquMCpn4&t=3s)
-
-The prototype uses the
-[Waveshare ESP32-S3-Touch-AMOLED-1.32](https://www.waveshare.com/esp32-s3-touch-amoled-1.32.htm),
-a custom 3D-printed mechanism, an Arduino_GFX-based interface and an
-SN65HVD230 CAN transceiver. The current climate pages provide a realistic
-interaction demonstrator while the final control functions are still being
-defined.
-
-The present milestone completes one full interaction path: changes made with
-the physical dial are transmitted over CAN to a Windows vehicle ECU simulator,
-and commands issued by the simulator are received and reflected on the display.
-
-## Highlights
-
-- Fast rotary input with short-press and long-press actions
-- Four demonstrator pages: temperature, fan, airflow and seat heating
-- Partial display updates for responsive value changes
-- Animated fan, clean page transitions and a trail-free startup sequence
-- A custom housing, geared rotating ring and screw-mounted display carrier
-- A restrained black, white, red and blue visual system
-- Bidirectional Classical CAN communication at 500 kbit/s
-- Periodic dial-state transmission every 200 ms
-- Remote commands with state confirmation and automatic retry
-- A Windows vehicle ECU simulator with live state, diagnostics and event logging
-
-## System overview
-
-```text
-Rotary encoder
-      │
-      ▼
-Smart Dial ── SN65HVD230 ── CAN bus ── CANable 2.0 ── Vehicle ECU Simulator
-      ▲                                                        │
-      └──────────────────── command confirmation ──────────────┘
-```
-
-The CANable interface and PC application are bench-development tools. The
-current prototype communicates with a simulated vehicle and is not intended for
-connection to a production vehicle.
-
-## Hardware
-
-- Waveshare ESP32-S3-Touch-AMOLED-1.32, 466 × 466 pixels
-- Five-pin rotary encoder module with an integrated push button
-- SN65HVD230 3.3 V CAN transceiver
-- CANable 2.0 USB-to-CAN adapter for PC testing
-- Four 6 × 6 × 6 mm tactile-switch positions reserved in the housing
-- Custom 3D-printed fixed tube, geared ring, base and upper cover
-- M3 heat-set inserts and black machine screws for the upper cover
-
-The four additional tactile-switch positions are not assigned in the current
-firmware. External connections and internal display pins are documented in
-[WIRING.md](WIRING.md).
-
-## Controls
-
-| Action | Result |
+| | What it is |
 |---|---|
-| Rotate | Move between pages |
-| Short press | Enter or leave value editing |
-| Rotate while editing | Change the active value |
-| Long press | Turn the climate interface on or off |
+| **Torus** | The device: ESP32-S3, 1.32" round 466×466 AMOLED, a rotating barrel with a push button in the middle, CAN bus. The plan is three of them in one console: Energy, Drive and **Performance**. Performance is the one I have built so far. |
+| **CANertia** | The firmware and UI running on the Torus. |
+| **CANertia Studio** | A Windows app (Python + Qt). It sends the car state, mirrors and controls the Torus through a USB-CAN adapter, and runs a guided demo for presentations. |
 
-## Firmware
+---
 
-The Arduino sketch is contained in one directory:
+## The startup
 
-```text
-SmartDial/
-├── SmartDial.ino
-├── SmartDial_Fonts_DINish.h
-└── logomodre256.c
-```
+<p align="center">
+  <img src="docs/media/torus_startup.gif" alt="The Torus startup: two balls draw an infinity, a laser traces the OJM Systems logo, the logo lights up, closes into a dot and the car is drawn." width="360">
+</p>
+<p align="center">
+  <img src="docs/media/torus_startup_strip.png" alt="Startup in five moments: infinity, laser, logo, close, car." width="100%">
+</p>
 
-### Requirements
+1. Two balls draw an infinity sign.
+2. A laser traces my logo with sparks.
+3. The logo lights up.
+4. It closes into a dot.
+5. The car is drawn.
 
-- Arduino IDE 2.x
-- Espressif ESP32 board package
-- **GFX Library for Arduino** (`Arduino_GFX_Library`)
-- **ESP32Encoder**
-- **LVGL 8.x**, used only to read the generated RGB565 logo asset
+It takes 6.5 s, and its last frame is exactly the first frame of the UI, so there is no jump. Every Torus image in this
+README is a real frame from the firmware renderer; I didn't mock anything up.
 
-The ESP32 board package provides the TWAI driver used for CAN communication;
-no additional CAN library is required.
+## The Performance Torus
 
-### Arduino IDE settings
+<p align="center">
+  <img src="docs/media/torus_pages.png" alt="The three pages: Active Aero (side view with the wing), Rear Wheel Steering (top view, rear wheels), Torque Vectoring (torque per wheel)." width="100%">
+</p>
 
-| Setting | Value |
+| Function | Options |
 |---|---|
-| Board | ESP32S3 Dev Module |
-| USB CDC On Boot | Enabled |
-| CPU Frequency | 240 MHz (WiFi) |
-| Core Debug Level | None |
-| USB DFU On Boot | Disabled |
-| Erase All Flash Before Sketch Upload | Disabled |
-| Events Run On | Core 1 |
-| Flash Mode | QIO 80 MHz |
-| Flash Size | 8 MB (64 Mb) |
-| Arduino Runs On | Core 1 |
-| Partition Scheme | Huge APP (3 MB No OTA / 1 MB SPIFFS) |
-| PSRAM | OPI PSRAM |
-| Upload Mode | UART0 / Hardware CDC |
-| Upload Speed | 921600 |
+| **Active Aero** | Auto · Low Drag · Downforce · Air Brake |
+| **Rear Wheel Steering** | Off · Auto · Stable · Agile |
+| **Torque Vectoring** | Off · Auto · Sport · Drift |
 
-Open `SmartDial/SmartDial.ino`, select the correct serial port, compile and
-upload. A successful startup reports:
+You only need three gestures: **turn, click and long press**.
 
-```text
-BOOT: Smart Dial PREMIUM SNAPPY V5.5 CAN
-CAN: ready | 500 kbit/s | TX 0x201 | RX 0x301
+- Turning in the menu changes the page. A click opens the selector, and turning then picks a mode.
+- The mode is sent after 250 ms of rest, so spinning fast through the options doesn't send everything in between.
+
+<table>
+  <tr>
+    <td align="center" width="33%"><img src="docs/media/torus_aero.gif" alt="Choosing an Aero mode: the view zooms to the wing." width="100%"><br><sub>Aero: zooms in on the wing</sub></td>
+    <td align="center" width="33%"><img src="docs/media/torus_rws.gif" alt="Choosing an RWS mode: the rear wheels steer." width="100%"><br><sub>RWS: the rear wheels follow the mode</sub></td>
+    <td align="center" width="33%"><img src="docs/media/torus_torque.gif" alt="Choosing a Torque Vectoring mode: the torque pours into each wheel." width="100%"><br><sub>TV: torque pours into each wheel</sub></td>
+  </tr>
+</table>
+
+## What makes it "smart"
+
+<p align="center">
+  <img src="docs/media/torus_smart.png" alt="Launch Control while standing, Boost while driving, Off locked above 120 km/h, Drift only in Track." width="100%">
+</p>
+
+- **Auto modes follow the car.**
+  - Aero: Low Drag when slow, Downforce from 80 km/h, and Air Brake under hard braking.
+  - RWS: Agile below 60 km/h, Stable above.
+- **One gesture, two meanings.**
+  - Hold the knob while standing and you get **Launch Control**. The start lights go out as the car pulls away.
+  - Hold it while driving and you get **Boost** for 10 s, with a countdown ring.
+- **Safety locks.**
+  - RWS Off and TV Off can't be chosen above 120 km/h, and Drift only works in Drive Mode Track.
+  - When you hit a locked option, the Torus tells you why.
+  - If something asks for a locked value over CAN, it gets refused.
+- **Safe default.** If the car data disappears, the Torus behaves as if the car were standing.
+
+<table>
+  <tr>
+    <td align="center" width="50%"><img src="docs/media/torus_action.gif" alt="Launch Control and Boost on the Torus." width="100%"><br><sub>Launch Control and Boost</sub></td>
+    <td align="center" width="50%"><img src="docs/media/torus_locks.gif" alt="Bouncing on locked options shows the reason." width="100%"><br><sub>Locked options explain themselves</sub></td>
+  </tr>
+</table>
+
+## CANertia Studio
+
+<p align="center">
+  <img src="docs/media/studio_overview.png" alt="CANertia Studio: the car on the left, the Energy, Drive and Performance Torus cards, the scenario bar below." width="100%">
+</p>
+
+I don't have a real car on my desk, so Studio plays one. You set the speed and whether the car is parked, driving or
+charging, and Studio sends that to the Torus 20 times a second. "What the Torus sees" uses the same rules as the
+firmware.
+
+- **Live mirror.** The Performance card mirrors the real Torus live, and you can change modes from the PC too.
+  - Studio won't send locked options, and it shows when the Torus refuses something.
+  - Until I build the Drive Torus, Studio plays that one as well.
+- **Scenario.** A 13-step scenario walks through everything with captions, which is handy for presentations.
+- **CAN log.** You can open a readable log of the CAN traffic.
+- **Same startup.** Studio starts with the same animation as the Torus.
+
+<table>
+  <tr>
+    <td align="center" width="50%"><img src="docs/media/studio_driving_auto.png" alt="Driving at 100 km/h: Auto picks Downforce and Stable." width="100%"><br><sub>100 km/h: Auto picks Downforce and Stable</sub></td>
+    <td align="center" width="50%"><img src="docs/media/studio_locked_off_above_120.png" alt="At 140 km/h Off is locked and Studio explains why." width="100%"><br><sub>140 km/h: Off is locked</sub></td>
+  </tr>
+  <tr>
+    <td align="center"><img src="docs/media/studio_launch_ready.png" alt="Launch Control armed on the Torus, mirrored in Studio." width="100%"><br><sub>Launch Control, mirrored live</sub></td>
+    <td align="center"><img src="docs/media/studio_boost.png" alt="Boost running, the Torus counts down." width="100%"><br><sub>Boost running</sub></td>
+  </tr>
+  <tr>
+    <td align="center"><img src="docs/media/studio_can_log.png" alt="The decoded CAN log." width="100%"><br><sub>CAN log</sub></td>
+    <td align="center"><img src="docs/media/studio_scenario.png" alt="The guided scenario with captions." width="100%"><br><sub>Guided scenario</sub></td>
+  </tr>
+</table>
+
+## How it fits together
+
+```mermaid
+flowchart LR
+    subgraph Console["Console box"]
+        E["Torus · Energy<br/><i>planned</i>"]
+        D["Torus · Drive<br/><i>planned</i>"]
+        P["Torus · Performance<br/>CANertia"]
+    end
+    BUS(("CAN bus<br/>500 kbit/s"))
+    E --- BUS
+    D --- BUS
+    P --- BUS
+    BUS --- C["CANable<br/>USB-CAN"] --- S["CANertia Studio<br/>plays the car"]
 ```
 
-## CAN communication
+| ID | Direction | Content |
+|---|---|---|
+| `0x100` | car → every Torus | Car state: park / drive / charging, speed (0.1 km/h), brake |
+| `0x201` | Performance → car | State: page, RWS, TV, Aero, Launch / Boost bits, heartbeat 200 ms |
+| `0x301` | car → Performance | Command with a sequence number (page, RWS, TV, Aero) |
+| `0x211` | Performance → car | ACK: 0 applied, 1 refused |
+| `0x202` | Drive → others | Drive Mode: Comfort / Sport / Track / My |
 
-The proof of concept uses Classical CAN with standard 11-bit identifiers at
-500 kbit/s.
+The full byte layouts are in [docs/CAN_PROTOCOL.md](docs/CAN_PROTOCOL.md). My working notes are in Czech.
 
-- `0x201` — eight-byte dial state, transmitted every 200 ms
-- `0x301` — two-byte command sent by the simulated vehicle ECU
+## Things I learned making it smooth
 
-The state frame contains power, A/C, temperature, fan, airflow, seat heating,
-visible page, alive counter and an XOR checksum. The next periodic state frame
-also confirms that a received command has been applied.
+Getting a 466×466 round display to animate smoothly on a microcontroller was the hardest part of the project. The UI
+now runs at about 60 fps on the board, and every frame lands on the display's refresh signal. What made the
+difference:
 
-The complete byte layout, signal scaling and example messages are documented in
-[CAN_PROTOCOL.md](CAN_PROTOCOL.md).
+- **Repaint only what changed.** Only the parts of the screen that changed are repainted, split between both CPU
+  cores.
+- **Overlap painting and sending.** The transfer to the display (DMA, ESP32-S3 segmented SPI transactions) runs while
+  the cores are still painting the next parts.
+- **Respect the display controller.** The CO5300 only accepts update windows with even coordinates, and they have to
+  be widened before drawing, not after. This bug cost me a while.
+- **Test every frame.** Tests compile the real firmware on the PC and check that every frame sent to the display is
+  identical to a clean full render.
 
-## Vehicle ECU simulator
+## Running it
 
-The included Windows application monitors the live dial state and sends vehicle
-commands back over a CANable-compatible SLCAN connection.
+**Firmware.** Arduino core esp32 3.3.10, with the `GFX Library for Arduino` and `ESP32Encoder` libraries:
 
-```text
-VehicleEcuSimulator/
-├── OJM_Vehicle_ECU_Simulator.py
-├── OJM_Logo.png
-├── OJM_Splash.png
-└── BUILD_EXE.bat
+```bash
+arduino-cli compile --fqbn "esp32:esp32:esp32s3:CDCOnBoot=cdc,FlashSize=8M,PartitionScheme=huge_app,PSRAM=opi" OJM_DDE_Dynamics
+arduino-cli upload -p COM4 --fqbn "esp32:esp32:esp32s3:CDCOnBoot=cdc,FlashSize=8M,PartitionScheme=huge_app,PSRAM=opi" OJM_DDE_Dynamics
 ```
 
-### Running from Python
+**CANertia Studio** (Python 3.10+):
 
-Python 3.10 or newer is required. Install the dependency with:
-
-```powershell
-py -m pip install "python-can[serial]"
+```bash
+pip install -r Vehicle_ECU_Simulator/requirements.txt
+python Vehicle_ECU_Simulator/main.py --demo         # a simulated Torus, no hardware needed
+python Vehicle_ECU_Simulator/main.py --port COM8    # with a CANable, then press Connect
 ```
 
-Run the simulator from the repository root:
+On Windows, `Vehicle_ECU_Simulator/INSTALL.bat`, `START.bat` and `DEMO.bat` do the same thing.
 
-```powershell
-py VehicleEcuSimulator/OJM_Vehicle_ECU_Simulator.py
+**Clash Display.** Studio uses Clash Display for headings. Its licence doesn't allow me to share the font files, so
+they aren't in this repo. Download it from [Fontshare](https://www.fontshare.com/fonts/clash-display) and put
+`ClashDisplay-Regular.otf`, `-Medium.otf` and `-Semibold.otf` into `assets/fonts/`. Without it, headings use Sora.
+
+**Tests:**
+
+```bash
+python -m unittest discover -s tests -v                 # protocol, CAN engine, Studio GUI
+python tools/test_renderer.py --node <path-to-node>     # the real firmware, frame by frame (needs ziglang)
 ```
 
-The default SLCAN port is `COM5`. A different port can be supplied with:
+The host tests need `pip install -r tools/requirements.txt`.
 
-```powershell
-py VehicleEcuSimulator/OJM_Vehicle_ECU_Simulator.py --port COM6
-```
+## What's in the repo
 
-Close Cangaroo or any other application using the CANable serial port before
-connecting the simulator.
+| Path | Contents |
+|---|---|
+| [`OJM_DDE_Dynamics/`](OJM_DDE_Dynamics) | Torus firmware (CANertia) |
+| [`Vehicle_ECU_Simulator/`](Vehicle_ECU_Simulator) | CANertia Studio |
+| [`tests/`](tests), [`tools/`](tools) | Tests and asset generators |
+| [`assets/`](assets) | Logo outlines, car drawings, fonts |
+| [`docs/`](docs) | Wiring, CAN protocol, startup timeline, changelog and my notes (mostly Czech) |
+| [`legacy/`](legacy) | My first prototype (a climate-control dial) and older snapshots |
 
-### Building the Windows executable
+## Where it is now
 
-Run `VehicleEcuSimulator/BUILD_EXE.bat`. The script installs or updates
-PyInstaller and creates:
+| | |
+|---|---|
+| **Performance Torus** | Works on the real board. This is CANertia V0.1. |
+| **CANertia Studio** | V0.1, tested with the board over a CANable. |
+| **Energy and Drive Torus** | *Planned.* Same firmware core, different role at build time. |
+| **Studio** | *Next:* proper throttle and brake physics. |
 
-```text
-VehicleEcuSimulator/dist/OJM_Vehicle_ECU_Simulator.exe
-```
+My very first prototype was a climate-control dial; it lives in [`legacy/`](legacy/README.md). Here's a
+[video of it](https://www.youtube.com/watch?v=JF2uquMCpn4&t=3s). Wiring and pins are in
+[docs/WIRING.md](docs/WIRING.md).
 
-The simulator waits for a valid `0x201` frame before enabling remote commands.
-It monitors frame integrity and the alive counter, reports the dial offline
-after 800 ms without a valid state frame, and retries unconfirmed commands up
-to three times.
+## Thanks
 
-## Rendering approach
-
-Normal interaction does not redraw the complete 466 × 466 frame. The firmware
-keeps base and working framebuffers in PSRAM, updates only the affected region
-and transfers RGB565 data over the 80 MHz QSPI display bus. TE synchronization
-is used where it helps prevent visible tearing. Arduino_GFX handles the runtime
-interface; LVGL is only needed for the existing logo descriptor.
-
-CAN processing is non-blocking and limited per main-loop pass so bus traffic
-cannot monopolise input or display updates. Bus-off recovery is handled without
-stopping the user interface.
-
-## Current status
-
-The current public milestone is `v0.2.0-can-poc`. It demonstrates the mechanical
-concept, responsive interface and bidirectional communication between one
-physical dial and the vehicle ECU simulator.
-
-The next phase will define the final functions of three physical dials, assign
-separate CAN identifiers and introduce configurable left, centre and right dial
-roles. Additional displays are not required to continue protocol and software
-development; the current single-dial implementation remains the validated
-baseline.
-
-Validated CAD and print files will be added after the revised housing has been
-physically assembled and checked.
-
-## Project support
-
-The display hardware used for this prototype was provided by Waveshare.
-Prototype assembly and bench work have also been supported with tools from:
-
-- Miniware — TS101 Go Kit
-- Fanttik — E1 Max precision electric screwdriver
-- iFixit — FixMat and Manta Driver Kit
-
-KORAD has confirmed support with a KA3005PS bench power supply. The unit is
-currently awaiting shipment and has not been used for this prototype.
-
-Sponsors supplied hardware or tools and did not control the design, firmware or
-project conclusions.
+Waveshare provided the display hardware. Miniware (TS101 Go Kit), Fanttik (E1 Max screwdriver) and iFixit (FixMat and
+Manta Driver Kit) helped me with tools for building and bench work, and KORAD confirmed support with a KA3005PS power
+supply. None of them had any say in the design, the code or the results.
 
 ## License
 
-No source-code or hardware license has been selected yet. Until a license is
-added, the project remains under default copyright while publication terms are
-being confirmed with the project supervisor.
+I haven't chosen a license yet. Until I add one, the project stays under default copyright while I confirm the
+publication terms with my supervisor.
 
-The bundled DINish font data is separately distributed under the SIL Open Font
-License 1.1. See [licenses/DINish-OFL-1.1.txt](licenses/DINish-OFL-1.1.txt).
+The bundled fonts are under the SIL Open Font License 1.1: Michroma, Sora and DINish (see [`licenses/`](licenses)).
+Clash Display isn't included.
+
+<p align="center"><sub>Ondřej Josef Macek · OJM Systems · <a href="https://ojmsystems.com">ojmsystems.com</a></sub></p>

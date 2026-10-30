@@ -27,3 +27,19 @@ desktop.ini
 *.tmp
 *.bak
 *.zip
+
+# Python environments and caches
+.venv/
+**/.venv/
+__pycache__/
+*.pyc
+dist/
+
+# Host test and firmware build output (tools write here)
+.build/
+validation/*
+!validation/.gitkeep
+firmware/
+
+# Clash Display: ITF Free Font License, may be used but not redistributed
+assets/fonts/ClashDisplay-*

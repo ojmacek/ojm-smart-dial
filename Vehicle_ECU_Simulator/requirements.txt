@@ -1,0 +1,4 @@
+python-can==4.6.1
+pyserial==3.5
+Pillow==11.3.0
+PySide6-Essentials==6.9.2
